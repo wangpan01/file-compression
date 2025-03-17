@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>哪吒关系图谱</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+        }
+        #chart {
+            width: 100%;
+            height: 800px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .legend {
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .legend-item {
+            display: inline-block;
+            margin: 5px 15px;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            vertical-align: middle;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">哪吒关系图谱</h1>
+    <div class="legend">
+        <div class="legend-item">
+            <span class="legend-color" style="background: #ff6b6b;"></span>
+            <span>家庭关系</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background: #4ecdc4;"></span>
+            <span>师徒关系</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background: #45b7d1;"></span>
+            <span>朋友关系</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background: #96ceb4;"></span>
+            <span>对手关系</span>
+        </div>
+    </div>
+    <div id="chart"></div>
+
+    <script>
+        const chart = echarts.init(document.getElementById('chart'));
+        
+        const data = {
+            nodes: [
+                { name: '哪吒', symbolSize: 70, category: 0 },
+                { name: '李靖', symbolSize: 50, category: 1 },
+                { name: '殷氏', symbolSize: 50, category: 1 },
+                { name: '太乙真人', symbolSize: 50, category: 2 },
+                { name: '敖丙', symbolSize: 45, category: 3 },
+                { name: '龙王', symbolSize: 45, category: 3 },
+                { name: '金吒', symbolSize: 40, category: 1 },
+                { name: '木吒', symbolSize: 40, category: 1 },
+                { name: '李天王', symbolSize: 45, category: 1 },
+                { name: '玉鼎真人', symbolSize: 45, category: 2 },
+                { name: '雷震子', symbolSize: 40, category: 3 },
+                { name: '杨戬', symbolSize: 45, category: 3 }
+            ],
+            links: [
+                { source: '哪吒', target: '李靖', value: '父子', lineStyle: { color: '#ff6b6b' } },
+                { source: '哪吒', target: '殷氏', value: '母子', lineStyle: { color: '#ff6b6b' } },
+                { source: '哪吒', target: '太乙真人', value: '师徒', lineStyle: { color: '#4ecdc4' } },
+                { source: '哪吒', target: '敖丙', value: '朋友/对手', lineStyle: { color: '#45b7d1' } },
+                { source: '敖丙', target: '龙王', value: '父子', lineStyle: { color: '#ff6b6b' } },
+                { source: '哪吒', target: '金吒', value: '兄弟', lineStyle: { color: '#ff6b6b' } },
+                { source: '哪吒', target: '木吒', value: '兄弟', lineStyle: { color: '#ff6b6b' } },
+                { source: '李靖', target: '李天王', value: '身份', lineStyle: { color: '#ff6b6b' } },
+                { source: '金吒', target: '玉鼎真人', value: '师徒', lineStyle: { color: '#4ecdc4' } },
+                { source: '哪吒', target: '雷震子', value: '朋友', lineStyle: { color: '#45b7d1' } },
+                { source: '哪吒', target: '杨戬', value: '朋友', lineStyle: { color: '#45b7d1' } }
+            ],
+            categories: [
+                { name: '主角' },
+                { name: '家人' },
+                { name: '师门' },
+                { name: '其他' }
+            ]
+        };
+
+        const option = {
+            tooltip: {
+                trigger: 'item',
+                formatter: function (params) {
+                    if (params.dataType === 'edge') {
+                        return `${params.data.source} 与 ${params.data.target}<br/>关系：${params.data.value}`;
+                    }
+                    return params.name;
+                }
+            },
+            legend: [{
+                data: data.categories.map(x => x.name)
+            }],
+            series: [{
+                type: 'graph',
+                layout: 'force',
+                data: data.nodes,
+                links: data.links,
+                categories: data.categories,
+                roam: true,
+                label: {
+                    show: true,
+                    position: 'right'
+                },
+                force: {
+                    repulsion: 1000,
+                    edgeLength: 200
+                },
+                emphasis: {
+                    focus: 'adjacency'
+                }
+            }]
+        };
+
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+    </script>
+</body>
+</html>
