@@ -68,6 +68,13 @@
             vertical-align: middle;
             border-radius: 3px;
         }
+        .info-panel {
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -94,9 +101,29 @@
                 <span class="legend-color" style="background: #ffcc99;"></span>
                 <span>阐教</span>
             </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #cc99ff;"></span>
+                <span>人教</span>
+            </div>
         </div>
         <div id="relationChart"></div>
         <div id="timelineChart" style="display: none;"></div>
+        <div class="info-panel">
+            <h3>重要战役</h3>
+            <ul>
+                <li><strong>汜水关之战</strong>：姜子牙率领周军与商军首次大规模交锋</li>
+                <li><strong>界牌关之战</strong>：阐截大战的主要战场之一</li>
+                <li><strong>西岐城之战</strong>：截教大军围攻西岐</li>
+                <li><strong>牧野之战</strong>：最终决战，商朝灭亡</li>
+            </ul>
+            <h3>重要法宝</h3>
+            <ul>
+                <li><strong>打神鞭</strong>：姜子牙的封神至宝</li>
+                <li><strong>诛仙剑阵</strong>：通天教主的最强阵法</li>
+                <li><strong>混元金斗</strong>：元始天尊的至宝</li>
+                <li><strong>封神榜</strong>：元始天尊赐予姜子牙的封神名册</li>
+            </ul>
+        </div>
     </div>
 
     <script>
@@ -107,64 +134,103 @@
         const relationData = {
             nodes: [
                 // 商朝
-                { name: '帝辛', symbolSize: 60, category: 0, value: '商纣王' },
-                { name: '妲己', symbolSize: 50, category: 0, value: '狐狸精' },
-                { name: '比干', symbolSize: 45, category: 0, value: '商朝忠臣' },
+                { name: '帝辛', symbolSize: 60, category: 0, value: '商纣王，商朝最后一位君主' },
+                { name: '妲己', symbolSize: 50, category: 0, value: '狐狸精，迷惑纣王' },
+                { name: '比干', symbolSize: 45, category: 0, value: '商朝忠臣，被纣王挖心' },
+                { name: '闻仲', symbolSize: 50, category: 0, value: '商朝大将，绝龙岭战死' },
+                { name: '殷郊', symbolSize: 40, category: 0, value: '纣王长子' },
+                { name: '殷洪', symbolSize: 40, category: 0, value: '纣王次子' },
+                
                 // 周朝
-                { name: '姬昌', symbolSize: 55, category: 1, value: '周文王' },
-                { name: '姬发', symbolSize: 55, category: 1, value: '周武王' },
-                { name: '姜子牙', symbolSize: 60, category: 1, value: '周朝军师' },
+                { name: '姬昌', symbolSize: 55, category: 1, value: '周文王，仁德之君' },
+                { name: '姬发', symbolSize: 55, category: 1, value: '周武王，灭商之主' },
+                { name: '姜子牙', symbolSize: 60, category: 1, value: '周朝军师，封神主角' },
+                { name: '南宫适', symbolSize: 45, category: 1, value: '周将，大战殷洪' },
+                { name: '黄飞虎', symbolSize: 50, category: 1, value: '反商投周第一人' },
+                
                 // 截教
                 { name: '通天教主', symbolSize: 60, category: 2, value: '截教教主' },
-                { name: '金灵圣母', symbolSize: 45, category: 2, value: '截教弟子' },
-                { name: '多宝道人', symbolSize: 45, category: 2, value: '截教弟子' },
-                { name: '赵公明', symbolSize: 45, category: 2, value: '截教弟子' },
+                { name: '金灵圣母', symbolSize: 45, category: 2, value: '截教大弟子' },
+                { name: '多宝道人', symbolSize: 45, category: 2, value: '截教大弟子' },
+                { name: '赵公明', symbolSize: 45, category: 2, value: '截教三宝之首' },
+                { name: '三霄娘娘', symbolSize: 45, category: 2, value: '云霄、琼霄、碧霄' },
+                { name: '孔宣', symbolSize: 45, category: 2, value: '五色神光之主' },
+                { name: '吕岳', symbolSize: 40, category: 2, value: '截教毒仙' },
+                
                 // 阐教
                 { name: '元始天尊', symbolSize: 60, category: 3, value: '阐教教主' },
-                { name: '太乙真人', symbolSize: 45, category: 3, value: '阐教弟子' },
-                { name: '广成子', symbolSize: 45, category: 3, value: '阐教弟子' },
-                { name: '南极仙翁', symbolSize: 45, category: 3, value: '阐教弟子' }
+                { name: '太乙真人', symbolSize: 45, category: 3, value: '阐教十二金仙' },
+                { name: '广成子', symbolSize: 45, category: 3, value: '阐教十二金仙' },
+                { name: '南极仙翁', symbolSize: 45, category: 3, value: '阐教十二金仙' },
+                { name: '燃灯道人', symbolSize: 50, category: 3, value: '阐教副教主' },
+                { name: '杨戬', symbolSize: 45, category: 3, value: '三眼神将' },
+                { name: '哪吒', symbolSize: 45, category: 3, value: '三太子' },
+                
+                // 人教
+                { name: '老子', symbolSize: 60, category: 4, value: '人教教主' },
+                { name: '玄都大法师', symbolSize: 45, category: 4, value: '老子弟子' }
             ],
             links: [
                 // 商朝内部关系
                 { source: '帝辛', target: '妲己', value: '宠幸', lineStyle: { color: '#ff9999' } },
                 { source: '帝辛', target: '比干', value: '逼挖心', lineStyle: { color: '#ff9999' } },
+                { source: '帝辛', target: '闻仲', value: '君臣', lineStyle: { color: '#ff9999' } },
+                { source: '帝辛', target: '殷郊', value: '父子', lineStyle: { color: '#ff9999' } },
+                { source: '帝辛', target: '殷洪', value: '父子', lineStyle: { color: '#ff9999' } },
+                
                 // 周朝内部关系
                 { source: '姬昌', target: '姬发', value: '父子', lineStyle: { color: '#99ccff' } },
                 { source: '姬发', target: '姜子牙', value: '君臣', lineStyle: { color: '#99ccff' } },
+                { source: '姜子牙', target: '南宫适', value: '主将', lineStyle: { color: '#99ccff' } },
+                { source: '姬发', target: '黄飞虎', value: '君臣', lineStyle: { color: '#99ccff' } },
+                
                 // 截教关系
                 { source: '通天教主', target: '金灵圣母', value: '师徒', lineStyle: { color: '#99ff99' } },
                 { source: '通天教主', target: '多宝道人', value: '师徒', lineStyle: { color: '#99ff99' } },
                 { source: '通天教主', target: '赵公明', value: '师徒', lineStyle: { color: '#99ff99' } },
+                { source: '通天教主', target: '三霄娘娘', value: '师徒', lineStyle: { color: '#99ff99' } },
+                { source: '通天教主', target: '孔宣', value: '师徒', lineStyle: { color: '#99ff99' } },
+                { source: '通天教主', target: '吕岳', value: '师徒', lineStyle: { color: '#99ff99' } },
+                
                 // 阐教关系
                 { source: '元始天尊', target: '太乙真人', value: '师徒', lineStyle: { color: '#ffcc99' } },
                 { source: '元始天尊', target: '广成子', value: '师徒', lineStyle: { color: '#ffcc99' } },
                 { source: '元始天尊', target: '南极仙翁', value: '师徒', lineStyle: { color: '#ffcc99' } },
+                { source: '元始天尊', target: '燃灯道人', value: '师徒', lineStyle: { color: '#ffcc99' } },
+                { source: '太乙真人', target: '哪吒', value: '师徒', lineStyle: { color: '#ffcc99' } },
+                
+                // 人教关系
+                { source: '老子', target: '玄都大法师', value: '师徒', lineStyle: { color: '#cc99ff' } },
+                
                 // 对立关系
                 { source: '通天教主', target: '元始天尊', value: '对立', lineStyle: { color: '#ff0000', type: 'dashed' } },
-                { source: '姜子牙', target: '帝辛', value: '征伐', lineStyle: { color: '#ff0000', type: 'dashed' } }
+                { source: '姜子牙', target: '帝辛', value: '征伐', lineStyle: { color: '#ff0000', type: 'dashed' } },
+                { source: '黄飞虎', target: '帝辛', value: '背叛', lineStyle: { color: '#ff0000', type: 'dashed' } }
             ],
             categories: [
                 { name: '商朝' },
                 { name: '周朝' },
                 { name: '截教' },
-                { name: '阐教' }
+                { name: '阐教' },
+                { name: '人教' }
             ]
         };
 
         // 时间线数据
         const timelineData = [
-            { name: '妲己入宫', value: [0, '妲己入宫', '狐狸精妲己被姜子牙发现真身'] },
-            { name: '比干被害', value: [1, '比干被害', '纣王逼比干挖心'] },
-            { name: '姬昌被囚', value: [2, '姬昌被囚', '周文王被囚羑里'] },
-            { name: '三妖兴妖', value: [3, '三妖兴妖', '妲己、褒姒、胡喜妃兴风作浪'] },
-            { name: '鹿台建成', value: [4, '鹿台建成', '纣王建造奢靡的鹿台'] },
-            { name: '姜子牙下山', value: [5, '姜子牙下山', '姜子牙下山辅佐周文王'] },
-            { name: '三教会议', value: [6, '三教会议', '阐截二教决裂'] },
-            { name: '周师伐商', value: [7, '周师伐商', '周武王率军伐商'] },
-            { name: '牧野之战', value: [8, '牧野之战', '周武王在牧野大败商纣王'] },
-            { name: '纣王自焚', value: [9, '纣王自焚', '纣王在摘星楼自焚'] },
-            { name: '封神完成', value: [10, '封神完成', '姜子牙完成封神，三百六十五位正神封定'] }
+            { name: '妲己入宫', value: [0, '妲己入宫', '狐狸精妲己被姜子牙发现真身，成为商纣王宠妃'] },
+            { name: '文王被囚', value: [1, '文王被囚', '姬昌被囚羑里，演算周易八卦'] },
+            { name: '三妖兴妖', value: [2, '三妖兴妖', '妲己、褒姒、胡喜妃兴风作浪，祸乱朝纲'] },
+            { name: '比干被害', value: [3, '比干被害', '比干进谏被纣王逼令挖心'] },
+            { name: '鹿台建成', value: [4, '鹿台建成', '纣王建造奢靡的鹿台，耗费巨资'] },
+            { name: '姜子牙下山', value: [5, '姜子牙下山', '姜子牙下山辅佐周文王，开启封神大业'] },
+            { name: '三教会议', value: [6, '三教会议', '阐截二教决裂，三教论道'] },
+            { name: '汜水关战', value: [7, '汜水关战', '姜子牙与闻仲在汜水关大战'] },
+            { name: '诛仙阵战', value: [8, '诛仙阵战', '阐教与截教在诛仙阵中决战'] },
+            { name: '西岐之围', value: [9, '西岐之围', '截教大军围攻西岐城'] },
+            { name: '牧野之战', value: [10, '牧野之战', '周武王在牧野大败商纣王'] },
+            { name: '纣王自焚', value: [11, '纣王自焚', '纣王在摘星楼自焚，商朝灭亡'] },
+            { name: '封神完成', value: [12, '封神完成', '姜子牙完成封神，三百六十五位正神封定'] }
         ];
 
         // 关系图配置
