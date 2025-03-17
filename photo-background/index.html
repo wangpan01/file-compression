@@ -96,6 +96,18 @@
         .preset-sizes {
             margin: 15px 0;
         }
+        #loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -108,24 +120,24 @@
         
         <div class="size-controls">
             <div class="preset-sizes">
-                <button onclick="setPhotoSize(295, 413)">一寸(295×413)</button>
-                <button onclick="setPhotoSize(413, 579)">两寸(413×579)</button>
-                <button onclick="setPhotoSize(260, 378)">小一寸(260×378)</button>
+                <button type="button" onclick="setPhotoSize(295, 413)">一寸(295×413)</button>
+                <button type="button" onclick="setPhotoSize(413, 579)">两寸(413×579)</button>
+                <button type="button" onclick="setPhotoSize(260, 378)">小一寸(260×378)</button>
             </div>
             <div style="margin-top: 10px;">
                 <label>自定义尺寸：</label>
-                <input type="number" id="widthInput" placeholder="宽度(px)">
-                <input type="number" id="heightInput" placeholder="高度(px)">
-                <button onclick="applyCustomSize()">应用尺寸</button>
+                <input type="number" id="widthInput" placeholder="宽度(px)" value="295">
+                <input type="number" id="heightInput" placeholder="高度(px)" value="413">
+                <button type="button" onclick="applyCustomSize()">应用尺寸</button>
             </div>
         </div>
 
         <div class="controls">
             <label for="bgColor">选择背景颜色：</label>
             <input type="color" id="bgColor" class="color-picker" value="#FFFFFF">
-            <button onclick="changeBackground('white')">白色</button>
-            <button onclick="changeBackground('#2E4DA7')">蓝色</button>
-            <button onclick="changeBackground('#C91F37')">红色</button>
+            <button type="button" onclick="changeBackground('#FFFFFF')">白色</button>
+            <button type="button" onclick="changeBackground('#2E4DA7')">蓝色</button>
+            <button type="button" onclick="changeBackground('#C91F37')">红色</button>
         </div>
 
         <div class="preview-container">
@@ -144,6 +156,8 @@
         </div>
     </div>
 
+    <div id="loading">正在处理图片，请稍候...</div>
+
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
 
@@ -154,8 +168,10 @@
         const outputCanvas = document.getElementById('outputCanvas');
         const downloadBtn = document.getElementById('downloadBtn');
         const bgColorPicker = document.getElementById('bgColor');
+        const loadingDiv = document.getElementById('loading');
         let currentImage = null;
         let bodyPixNet = null;
+        let isProcessing = false;
         
         // 默认尺寸（一寸）
         let targetWidth = 295;
@@ -164,15 +180,21 @@
         // 加载BodyPix模型
         async function loadModel() {
             try {
+                loadingDiv.style.display = 'block';
+                loadingDiv.textContent = '正在加载模型，请稍候...';
                 bodyPixNet = await bodyPix.load({
                     architecture: 'MobileNetV1',
                     outputStride: 16,
                     multiplier: 0.75,
                     quantBytes: 2
                 });
+                loadingDiv.style.display = 'none';
             } catch (error) {
                 console.error('模型加载失败:', error);
-                alert('模型加载失败，请检查网络连接并刷新页面重试。');
+                loadingDiv.textContent = '模型加载失败，请刷新页面重试';
+                setTimeout(() => {
+                    loadingDiv.style.display = 'none';
+                }, 3000);
             }
         }
 
@@ -258,9 +280,13 @@
 
         // 处理图片
         async function processImage() {
-            if (!bodyPixNet || !currentImage) return;
+            if (!bodyPixNet || !currentImage || isProcessing) return;
 
             try {
+                isProcessing = true;
+                loadingDiv.style.display = 'block';
+                loadingDiv.textContent = '正在处理图片，请稍候...';
+
                 // 调整画布大小
                 outputCanvas.width = targetWidth;
                 outputCanvas.height = targetHeight;
@@ -319,9 +345,15 @@
                 ctx.drawImage(tempCanvas2, x, y);
                 
                 downloadBtn.disabled = false;
+                loadingDiv.style.display = 'none';
             } catch (error) {
                 console.error('图像处理失败:', error);
-                alert('图像处理失败，请重试。');
+                loadingDiv.textContent = '图像处理失败，请重试';
+                setTimeout(() => {
+                    loadingDiv.style.display = 'none';
+                }, 3000);
+            } finally {
+                isProcessing = false;
             }
         }
 
