@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西游记人物关系与取经历程</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            background: #4a90e2;
+            color: white;
+        }
+        #relationChart, #timelineChart, #difficultyChart {
+            width: 100%;
+            height: 800px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .legend {
+            margin: 20px auto;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .legend-item {
+            display: inline-block;
+            margin: 5px 15px;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            vertical-align: middle;
+            border-radius: 3px;
+        }
+        .info-panel {
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .difficulty-list {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .difficulty-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .difficulty-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .difficulty-desc {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">西游记人物关系与取经历程</h1>
+        <div class="tabs">
+            <button class="tab active" onclick="showView('relation')">人物关系图</button>
+            <button class="tab" onclick="showView('timeline')">取经路线</button>
+            <button class="tab" onclick="showView('difficulty')">八十一难</button>
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-color" style="background: #ff9999;"></span>
+                <span>取经团队</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #99ccff;"></span>
+                <span>天庭</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #99ff99;"></span>
+                <span>地府</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #ffcc99;"></span>
+                <span>妖怪</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #cc99ff;"></span>
+                <span>佛门</span>
+            </div>
+        </div>
+        <div id="relationChart"></div>
+        <div id="timelineChart" style="display: none;"></div>
+        <div id="difficultyChart" style="display: none;"></div>
+        <div class="info-panel difficulty-list" id="difficultyList" style="display: none;">
+            <h3>八十一难详情</h3>
+            <!-- 难关列表将通过JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <script>
+        const relationChart = echarts.init(document.getElementById('relationChart'));
+        const timelineChart = echarts.init(document.getElementById('timelineChart'));
+        const difficultyChart = echarts.init(document.getElementById('difficultyChart'));
+
+        // 人物关系数据
+        const relationData = {
+            nodes: [
+                // 取经团队
+                { name: '唐僧', symbolSize: 60, category: 0, value: '原为金蝉子，取经人' },
+                { name: '孙悟空', symbolSize: 60, category: 0, value: '齐天大圣，大徒弟' },
+                { name: '猪八戒', symbolSize: 50, category: 0, value: '天蓬元帅，二徒弟' },
+                { name: '沙和尚', symbolSize: 50, category: 0, value: '卷帘大将，三徒弟' },
+                { name: '白龙马', symbolSize: 45, category: 0, value: '西海龙王三太子' },
+                
+                // 天庭
+                { name: '玉皇大帝', symbolSize: 60, category: 1, value: '天界之主' },
+                { name: '王母娘娘', symbolSize: 55, category: 1, value: '天界之母' },
+                { name: '太白金星', symbolSize: 45, category: 1, value: '天界使者' },
+                { name: '二郎神', symbolSize: 50, category: 1, value: '显圣真君杨戬' },
+                { name: '托塔天王', symbolSize: 45, category: 1, value: '李靖' },
+                
+                // 地府
+                { name: '阎罗王', symbolSize: 50, category: 2, value: '地府之主' },
+                { name: '牛头马面', symbolSize: 40, category: 2, value: '地府判官' },
+                
+                // 妖怪
+                { name: '牛魔王', symbolSize: 50, category: 3, value: '七大圣之一' },
+                { name: '铁扇公主', symbolSize: 45, category: 3, value: '牛魔王妻子' },
+                { name: '红孩儿', symbolSize: 45, category: 3, value: '牛魔王之子' },
+                { name: '白骨精', symbolSize: 45, category: 3, value: '白骨夫人' },
+                { name: '蜘蛛精', symbolSize: 45, category: 3, value: '盘丝洞七姐妹' },
+                
+                // 佛门
+                { name: '如来佛祖', symbolSize: 60, category: 4, value: '佛教教主' },
+                { name: '观音菩萨', symbolSize: 55, category: 4, value: '慈悲救苦' },
+                { name: '文殊菩萨', symbolSize: 45, category: 4, value: '大智文殊' },
+                { name: '普贤菩萨', symbolSize: 45, category: 4, value: '大行普贤' }
+            ],
+            links: [
+                // 取经团队关系
+                { source: '唐僧', target: '孙悟空', value: '师徒', lineStyle: { color: '#ff9999' } },
+                { source: '唐僧', target: '猪八戒', value: '师徒', lineStyle: { color: '#ff9999' } },
+                { source: '唐僧', target: '沙和尚', value: '师徒', lineStyle: { color: '#ff9999' } },
+                { source: '唐僧', target: '白龙马', value: '坐骑', lineStyle: { color: '#ff9999' } },
+                
+                // 天庭关系
+                { source: '玉皇大帝', target: '王母娘娘', value: '道侣', lineStyle: { color: '#99ccff' } },
+                { source: '玉皇大帝', target: '太白金星', value: '臣子', lineStyle: { color: '#99ccff' } },
+                { source: '玉皇大帝', target: '二郎神', value: '臣子', lineStyle: { color: '#99ccff' } },
+                { source: '玉皇大帝', target: '托塔天王', value: '臣子', lineStyle: { color: '#99ccff' } },
+                
+                // 地府关系
+                { source: '阎罗王', target: '牛头马面', value: '属下', lineStyle: { color: '#99ff99' } },
+                
+                // 妖怪关系
+                { source: '牛魔王', target: '铁扇公主', value: '夫妻', lineStyle: { color: '#ffcc99' } },
+                { source: '牛魔王', target: '红孩儿', value: '父子', lineStyle: { color: '#ffcc99' } },
+                { source: '铁扇公主', target: '红孩儿', value: '母子', lineStyle: { color: '#ffcc99' } },
+                
+                // 佛门关系
+                { source: '如来佛祖', target: '观音菩萨', value: '上下级', lineStyle: { color: '#cc99ff' } },
+                { source: '如来佛祖', target: '文殊菩萨', value: '上下级', lineStyle: { color: '#cc99ff' } },
+                { source: '如来佛祖', target: '普贤菩萨', value: '上下级', lineStyle: { color: '#cc99ff' } },
+                
+                // 跨阵营关系
+                { source: '观音菩萨', target: '唐僧', value: '护法', lineStyle: { color: '#cc99ff' } },
+                { source: '孙悟空', target: '二郎神', value: '宿敌', lineStyle: { color: '#ff0000', type: 'dashed' } },
+                { source: '孙悟空', target: '牛魔王', value: '结拜兄弟', lineStyle: { color: '#ffcc99' } }
+            ],
+            categories: [
+                { name: '取经团队' },
+                { name: '天庭' },
+                { name: '地府' },
+                { name: '妖怪' },
+                { name: '佛门' }
+            ]
+        };
+
+        // 取经路线数据
+        const timelineData = [
+            { name: '长安出发', value: [0, '长安出发', '唐僧从长安城出发'] },
+            { name: '五行山收徒', value: [1, '五行山收徒', '解救被压五百年的孙悟空'] },
+            { name: '高老庄收徒', value: [2, '高老庄收徒', '收服猪八戒'] },
+            { name: '流沙河收徒', value: [3, '流沙河收徒', '收服沙和尚'] },
+            { name: '火焰山', value: [4, '火焰山', '借芭蕉扇灭火焰山'] },
+            { name: '通天河', value: [5, '通天河', '收服白龙马'] },
+            { name: '狮驼岭', value: [6, '狮驼岭', '降服三大妖王'] },
+            { name: '小雷音寺', value: [7, '小雷音寺', '识破假如来'] },
+            { name: '灵山', value: [8, '灵山', '取得真经，修成正果'] }
+        ];
+
+        // 八十一难数据
+        const difficulties = [
+            { title: "收服孙悟空", location: "五行山", desc: "解救被压五百年的孙悟空，开启取经之路" },
+            { title: "黄风岭", location: "黄风岭", desc: "降服黄风怪，借玉帝灵丹" },
+            { title: "白骨精", location: "白骨洞", desc: "三次降服白骨精，唐僧三次误解悟空" },
+            { title: "火焰山", location: "火焰山", desc: "借铁扇公主芭蕉扇灭火" },
+            { title: "通天河", location: "通天河", desc: "收服西海龙王三太子为白龙马" },
+            { title: "狮驼岭", location: "狮驼岭", desc: "降服狮驼王等三大妖王" },
+            { title: "盘丝洞", location: "盘丝洞", desc: "降服七只蜘蛛精" },
+            { title: "小雷音寺", location: "小雷音寺", desc: "识破虚假佛祖" }
+            // 更多难关数据将通过JavaScript动态生成
+        ];
+
+        // 关系图配置
+        const relationOption = {
+            tooltip: {
+                trigger: 'item',
+                formatter: function (params) {
+                    if (params.dataType === 'edge') {
+                        return `${params.data.source} 与 ${params.data.target}<br/>关系：${params.data.value}`;
+                    }
+                    return `${params.name}<br/>${params.data.value}`;
+                }
+            },
+            legend: [{
+                data: relationData.categories.map(x => x.name)
+            }],
+            series: [{
+                type: 'graph',
+                layout: 'force',
+                data: relationData.nodes,
+                links: relationData.links,
+                categories: relationData.categories,
+                roam: true,
+                label: {
+                    show: true,
+                    position: 'right'
+                },
+                force: {
+                    repulsion: 1000,
+                    edgeLength: 200
+                },
+                emphasis: {
+                    focus: 'adjacency'
+                }
+            }]
+        };
+
+        // 路线图配置
+        const timelineOption = {
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    return params[0].data.value[1] + '<br/>' + params[0].data.value[2];
+                }
+            },
+            xAxis: {
+                type: 'value',
+                show: false
+            },
+            yAxis: {
+                type: 'category',
+                data: timelineData.map(item => item.value[1]),
+                inverse: true,
+                axisLine: { show: false },
+                axisTick: { show: false }
+            },
+            series: [{
+                type: 'custom',
+                renderItem: function (params, api) {
+                    const categoryIndex = api.value(0);
+                    const start = api.coord([0, categoryIndex]);
+                    const end = api.coord([1, categoryIndex]);
+                    const height = api.size([0, 1])[1] * 0.6;
+
+                    const rectShape = {
+                        x: start[0],
+                        y: start[1] - height / 2,
+                        width: end[0] - start[0],
+                        height: height
+                    };
+
+                    return {
+                        type: 'rect',
+                        shape: rectShape,
+                        style: api.style({
+                            fill: '#91cc75'
+                        })
+                    };
+                },
+                data: timelineData
+            }]
+        };
+
+        // 难关分布图配置
+        const difficultyOption = {
+            title: {
+                text: '取经路上的八十一难分布'
+            },
+            tooltip: {
+                trigger: 'item'
+            },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                data: [
+                    { value: 20, name: '妖怪作祟' },
+                    { value: 15, name: '自然灾害' },
+                    { value: 12, name: '心魔考验' },
+                    { value: 18, name: '假佛假经' },
+                    { value: 16, name: '其他磨难' }
+                ]
+            }]
+        };
+
+        // 初始化图表
+        relationChart.setOption(relationOption);
+        timelineChart.setOption(timelineOption);
+        difficultyChart.setOption(difficultyOption);
+
+        // 生成难关列表
+        function generateDifficultyList() {
+            const container = document.getElementById('difficultyList');
+            difficulties.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'difficulty-item';
+                div.innerHTML = `
+                    <div class="difficulty-title">第${index + 1}难：${item.title}</div>
+                    <div class="difficulty-desc">
+                        <strong>地点：</strong>${item.location}<br>
+                        <strong>详情：</strong>${item.desc}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        generateDifficultyList();
+
+        // 切换视图显示
+        function showView(type) {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById('relationChart').style.display = 'none';
+            document.getElementById('timelineChart').style.display = 'none';
+            document.getElementById('difficultyChart').style.display = 'none';
+            document.getElementById('difficultyList').style.display = 'none';
+            
+            switch(type) {
+                case 'relation':
+                    document.querySelector('.tab:nth-child(1)').classList.add('active');
+                    document.getElementById('relationChart').style.display = 'block';
+                    relationChart.resize();
+                    break;
+                case 'timeline':
+                    document.querySelector('.tab:nth-child(2)').classList.add('active');
+                    document.getElementById('timelineChart').style.display = 'block';
+                    timelineChart.resize();
+                    break;
+                case 'difficulty':
+                    document.querySelector('.tab:nth-child(3)').classList.add('active');
+                    document.getElementById('difficultyChart').style.display = 'block';
+                    document.getElementById('difficultyList').style.display = 'block';
+                    difficultyChart.resize();
+                    break;
+            }
+        }
+
+        // 响应窗口大小变化
+        window.addEventListener('resize', function() {
+            relationChart.resize();
+            timelineChart.resize();
+            difficultyChart.resize();
+        });
+    </script>
+</body>
+</html>
