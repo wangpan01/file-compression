@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>证件照背景更换工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1d1d1f;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #0071e3;
+            background-color: #f5f5f7;
+        }
+        .preview-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 20px;
+        }
+        .preview-box {
+            flex: 1;
+            text-align: center;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .color-picker {
+            margin: 10px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #0071e3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0077ed;
+        }
+        button:disabled {
+            background-color: #999;
+            cursor: not-allowed;
+        }
+        .size-controls {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f5f5f7;
+            border-radius: 10px;
+        }
+        .size-controls label {
+            margin-right: 10px;
+        }
+        .size-controls input {
+            width: 80px;
+            padding: 5px;
+            margin-right: 15px;
+        }
+        .preset-sizes {
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>证件照背景更换工具</h1>
+        <div class="upload-area" id="dropZone">
+            <p>点击或拖拽证件照片到此处</p>
+            <input type="file" id="fileInput" accept="image/*" style="display: none">
+        </div>
+        
+        <div class="size-controls">
+            <div class="preset-sizes">
+                <button onclick="setPhotoSize(295, 413)">一寸(295×413)</button>
+                <button onclick="setPhotoSize(413, 579)">两寸(413×579)</button>
+                <button onclick="setPhotoSize(260, 378)">小一寸(260×378)</button>
+            </div>
+            <div style="margin-top: 10px;">
+                <label>自定义尺寸：</label>
+                <input type="number" id="widthInput" placeholder="宽度(px)">
+                <input type="number" id="heightInput" placeholder="高度(px)">
+                <button onclick="applyCustomSize()">应用尺寸</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <label for="bgColor">选择背景颜色：</label>
+            <input type="color" id="bgColor" class="color-picker" value="#FFFFFF">
+            <button onclick="changeBackground('white')">白色</button>
+            <button onclick="changeBackground('#2E4DA7')">蓝色</button>
+            <button onclick="changeBackground('#C91F37')">红色</button>
+        </div>
+
+        <div class="preview-container">
+            <div class="preview-box">
+                <h3>原始图片</h3>
+                <img id="originalPreview" class="preview-image">
+            </div>
+            <div class="preview-box">
+                <h3>处理后</h3>
+                <canvas id="outputCanvas" class="preview-image"></canvas>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="downloadBtn" onclick="downloadImage()" disabled>下载照片</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const originalPreview = document.getElementById('originalPreview');
+        const outputCanvas = document.getElementById('outputCanvas');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const bgColorPicker = document.getElementById('bgColor');
+        let currentImage = null;
+        let bodyPixNet = null;
+        
+        // 默认尺寸（一寸）
+        let targetWidth = 295;
+        let targetHeight = 413;
+
+        // 加载BodyPix模型
+        async function loadModel() {
+            try {
+                bodyPixNet = await bodyPix.load({
+                    architecture: 'MobileNetV1',
+                    outputStride: 16,
+                    multiplier: 0.75,
+                    quantBytes: 2
+                });
+            } catch (error) {
+                console.error('模型加载失败:', error);
+                alert('模型加载失败，请检查网络连接并刷新页面重试。');
+            }
+        }
+
+        // 初始化加载模型
+        loadModel();
+
+        // 处理文件拖放
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#0071e3';
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ccc';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ccc';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+
+        // 点击上传
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        // 处理上传的文件
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    originalPreview.src = e.target.result;
+                    processImage();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 设置照片尺寸
+        function setPhotoSize(width, height) {
+            targetWidth = width;
+            targetHeight = height;
+            document.getElementById('widthInput').value = width;
+            document.getElementById('heightInput').value = height;
+            if (currentImage) {
+                processImage();
+            }
+        }
+
+        // 应用自定义尺寸
+        function applyCustomSize() {
+            const width = parseInt(document.getElementById('widthInput').value);
+            const height = parseInt(document.getElementById('heightInput').value);
+            if (width > 0 && height > 0) {
+                targetWidth = width;
+                targetHeight = height;
+                if (currentImage) {
+                    processImage();
+                }
+            } else {
+                alert('请输入有效的尺寸');
+            }
+        }
+
+        // 更换背景颜色
+        function changeBackground(color) {
+            bgColorPicker.value = color;
+            if (currentImage) {
+                processImage();
+            }
+        }
+
+        // 处理图片
+        async function processImage() {
+            if (!bodyPixNet || !currentImage) return;
+
+            try {
+                // 调整画布大小
+                outputCanvas.width = targetWidth;
+                outputCanvas.height = targetHeight;
+
+                // 创建临时画布进行图像缩放
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // 计算缩放比例，保持宽高比
+                const scale = Math.min(targetWidth / currentImage.width, targetHeight / currentImage.height);
+                const scaledWidth = currentImage.width * scale;
+                const scaledHeight = currentImage.height * scale;
+                
+                tempCanvas.width = scaledWidth;
+                tempCanvas.height = scaledHeight;
+                
+                // 绘制缩放后的图像
+                tempCtx.drawImage(currentImage, 0, 0, scaledWidth, scaledHeight);
+
+                // 使用BodyPix进行分割
+                const segmentation = await bodyPixNet.segmentPerson(tempCanvas, {
+                    flipHorizontal: false,
+                    internalResolution: 'medium',
+                    segmentationThreshold: 0.7
+                });
+
+                const ctx = outputCanvas.getContext('2d');
+                
+                // 填充背景色
+                ctx.fillStyle = bgColorPicker.value;
+                ctx.fillRect(0, 0, targetWidth, targetHeight);
+
+                // 计算居中位置
+                const x = (targetWidth - scaledWidth) / 2;
+                const y = (targetHeight - scaledHeight) / 2;
+
+                // 创建新的ImageData来合成结果
+                const imageData = tempCtx.getImageData(0, 0, scaledWidth, scaledHeight);
+                const data = imageData.data;
+                
+                for (let i = 0; i < segmentation.data.length; i++) {
+                    if (!segmentation.data[i]) {
+                        // 如果不是人像部分，设置为透明
+                        data[i * 4 + 3] = 0;
+                    }
+                }
+
+                // 创建临时画布来处理透明图像
+                const tempCanvas2 = document.createElement('canvas');
+                tempCanvas2.width = scaledWidth;
+                tempCanvas2.height = scaledHeight;
+                const tempCtx2 = tempCanvas2.getContext('2d');
+                tempCtx2.putImageData(imageData, 0, 0);
+
+                // 将处理后的图像绘制到最终画布上
+                ctx.drawImage(tempCanvas2, x, y);
+                
+                downloadBtn.disabled = false;
+            } catch (error) {
+                console.error('图像处理失败:', error);
+                alert('图像处理失败，请重试。');
+            }
+        }
+
+        // 下载处理后的图片
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = '证件照.png';
+            link.href = outputCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // 监听颜色选择器变化
+        bgColorPicker.addEventListener('input', () => {
+            if (currentImage) {
+                processImage();
+            }
+        });
+    </script>
+</body>
+</html>
