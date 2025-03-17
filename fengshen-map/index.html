@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>封神演义人物关系与大事记</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            background: #4a90e2;
+            color: white;
+        }
+        #relationChart, #timelineChart {
+            width: 100%;
+            height: 800px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .legend {
+            margin: 20px auto;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .legend-item {
+            display: inline-block;
+            margin: 5px 15px;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            vertical-align: middle;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">封神演义人物关系与大事记</h1>
+        <div class="tabs">
+            <button class="tab active" onclick="showChart('relation')">人物关系图</button>
+            <button class="tab" onclick="showChart('timeline')">重要事件</button>
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-color" style="background: #ff9999;"></span>
+                <span>商朝阵营</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #99ccff;"></span>
+                <span>周朝阵营</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #99ff99;"></span>
+                <span>截教</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #ffcc99;"></span>
+                <span>阐教</span>
+            </div>
+        </div>
+        <div id="relationChart"></div>
+        <div id="timelineChart" style="display: none;"></div>
+    </div>
+
+    <script>
+        const relationChart = echarts.init(document.getElementById('relationChart'));
+        const timelineChart = echarts.init(document.getElementById('timelineChart'));
+
+        // 人物关系数据
+        const relationData = {
+            nodes: [
+                // 商朝
+                { name: '帝辛', symbolSize: 60, category: 0, value: '商纣王' },
+                { name: '妲己', symbolSize: 50, category: 0, value: '狐狸精' },
+                { name: '比干', symbolSize: 45, category: 0, value: '商朝忠臣' },
+                // 周朝
+                { name: '姬昌', symbolSize: 55, category: 1, value: '周文王' },
+                { name: '姬发', symbolSize: 55, category: 1, value: '周武王' },
+                { name: '姜子牙', symbolSize: 60, category: 1, value: '周朝军师' },
+                // 截教
+                { name: '通天教主', symbolSize: 60, category: 2, value: '截教教主' },
+                { name: '金灵圣母', symbolSize: 45, category: 2, value: '截教弟子' },
+                { name: '多宝道人', symbolSize: 45, category: 2, value: '截教弟子' },
+                { name: '赵公明', symbolSize: 45, category: 2, value: '截教弟子' },
+                // 阐教
+                { name: '元始天尊', symbolSize: 60, category: 3, value: '阐教教主' },
+                { name: '太乙真人', symbolSize: 45, category: 3, value: '阐教弟子' },
+                { name: '广成子', symbolSize: 45, category: 3, value: '阐教弟子' },
+                { name: '南极仙翁', symbolSize: 45, category: 3, value: '阐教弟子' }
+            ],
+            links: [
+                // 商朝内部关系
+                { source: '帝辛', target: '妲己', value: '宠幸', lineStyle: { color: '#ff9999' } },
+                { source: '帝辛', target: '比干', value: '逼挖心', lineStyle: { color: '#ff9999' } },
+                // 周朝内部关系
+                { source: '姬昌', target: '姬发', value: '父子', lineStyle: { color: '#99ccff' } },
+                { source: '姬发', target: '姜子牙', value: '君臣', lineStyle: { color: '#99ccff' } },
+                // 截教关系
+                { source: '通天教主', target: '金灵圣母', value: '师徒', lineStyle: { color: '#99ff99' } },
+                { source: '通天教主', target: '多宝道人', value: '师徒', lineStyle: { color: '#99ff99' } },
+                { source: '通天教主', target: '赵公明', value: '师徒', lineStyle: { color: '#99ff99' } },
+                // 阐教关系
+                { source: '元始天尊', target: '太乙真人', value: '师徒', lineStyle: { color: '#ffcc99' } },
+                { source: '元始天尊', target: '广成子', value: '师徒', lineStyle: { color: '#ffcc99' } },
+                { source: '元始天尊', target: '南极仙翁', value: '师徒', lineStyle: { color: '#ffcc99' } },
+                // 对立关系
+                { source: '通天教主', target: '元始天尊', value: '对立', lineStyle: { color: '#ff0000', type: 'dashed' } },
+                { source: '姜子牙', target: '帝辛', value: '征伐', lineStyle: { color: '#ff0000', type: 'dashed' } }
+            ],
+            categories: [
+                { name: '商朝' },
+                { name: '周朝' },
+                { name: '截教' },
+                { name: '阐教' }
+            ]
+        };
+
+        // 时间线数据
+        const timelineData = [
+            { name: '妲己入宫', value: [0, '妲己入宫', '狐狸精妲己被姜子牙发现真身'] },
+            { name: '比干被害', value: [1, '比干被害', '纣王逼比干挖心'] },
+            { name: '姬昌被囚', value: [2, '姬昌被囚', '周文王被囚羑里'] },
+            { name: '三妖兴妖', value: [3, '三妖兴妖', '妲己、褒姒、胡喜妃兴风作浪'] },
+            { name: '鹿台建成', value: [4, '鹿台建成', '纣王建造奢靡的鹿台'] },
+            { name: '姜子牙下山', value: [5, '姜子牙下山', '姜子牙下山辅佐周文王'] },
+            { name: '三教会议', value: [6, '三教会议', '阐截二教决裂'] },
+            { name: '周师伐商', value: [7, '周师伐商', '周武王率军伐商'] },
+            { name: '牧野之战', value: [8, '牧野之战', '周武王在牧野大败商纣王'] },
+            { name: '纣王自焚', value: [9, '纣王自焚', '纣王在摘星楼自焚'] },
+            { name: '封神完成', value: [10, '封神完成', '姜子牙完成封神，三百六十五位正神封定'] }
+        ];
+
+        // 关系图配置
+        const relationOption = {
+            tooltip: {
+                trigger: 'item',
+                formatter: function (params) {
+                    if (params.dataType === 'edge') {
+                        return `${params.data.source} 与 ${params.data.target}<br/>关系：${params.data.value}`;
+                    }
+                    return `${params.name}<br/>${params.data.value}`;
+                }
+            },
+            legend: [{
+                data: relationData.categories.map(x => x.name)
+            }],
+            series: [{
+                type: 'graph',
+                layout: 'force',
+                data: relationData.nodes,
+                links: relationData.links,
+                categories: relationData.categories,
+                roam: true,
+                label: {
+                    show: true,
+                    position: 'right'
+                },
+                force: {
+                    repulsion: 1000,
+                    edgeLength: 200
+                },
+                emphasis: {
+                    focus: 'adjacency'
+                }
+            }]
+        };
+
+        // 时间线配置
+        const timelineOption = {
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    return params[0].data.value[1] + '<br/>' + params[0].data.value[2];
+                }
+            },
+            xAxis: {
+                type: 'value',
+                show: false
+            },
+            yAxis: {
+                type: 'category',
+                data: timelineData.map(item => item.value[1]),
+                inverse: true,
+                axisLine: { show: false },
+                axisTick: { show: false }
+            },
+            series: [{
+                type: 'custom',
+                renderItem: function (params, api) {
+                    const categoryIndex = api.value(0);
+                    const start = api.coord([0, categoryIndex]);
+                    const end = api.coord([1, categoryIndex]);
+                    const height = api.size([0, 1])[1] * 0.6;
+
+                    const rectShape = {
+                        x: start[0],
+                        y: start[1] - height / 2,
+                        width: end[0] - start[0],
+                        height: height
+                    };
+
+                    return {
+                        type: 'rect',
+                        shape: rectShape,
+                        style: api.style({
+                            fill: '#91cc75'
+                        })
+                    };
+                },
+                data: timelineData
+            }]
+        };
+
+        // 初始化图表
+        relationChart.setOption(relationOption);
+        timelineChart.setOption(timelineOption);
+
+        // 切换图表显示
+        function showChart(type) {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            if (type === 'relation') {
+                document.querySelector('.tab:first-child').classList.add('active');
+                document.getElementById('relationChart').style.display = 'block';
+                document.getElementById('timelineChart').style.display = 'none';
+                relationChart.resize();
+            } else {
+                document.querySelector('.tab:last-child').classList.add('active');
+                document.getElementById('relationChart').style.display = 'none';
+                document.getElementById('timelineChart').style.display = 'block';
+                timelineChart.resize();
+            }
+        }
+
+        // 响应窗口大小变化
+        window.addEventListener('resize', function() {
+            relationChart.resize();
+            timelineChart.resize();
+        });
+    </script>
+</body>
+</html>
